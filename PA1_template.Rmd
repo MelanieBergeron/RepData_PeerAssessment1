@@ -5,21 +5,54 @@ output:
     keep_md: true
 ---
 
+```{r}
+library(ggplot2)
+```
 
 ## Loading and preprocessing the data
-
+```{r}
+unzip('activity.zip')
+data = read.csv('activity.csv')
+```
 
 
 ## What is mean total number of steps taken per day?
-
+```{r, echo=TRUE}
+sum_data = aggregate(steps ~ date, data, sum)
+print(qplot(sum_data$steps))
+mean(sum_data$steps)
+median(sum_data$steps)
+```
 
 
 ## What is the average daily activity pattern?
-
-
+```{r, echo=TRUE}
+sum_data_interval = aggregate(steps ~ interval, data, sum)
+plot.ts(sum_data_interval$interval, sum_data_interval$steps, type = 'l')
+print(sum_data_interval$interval[which.max(sum_data_interval$steps)])
+```
 
 ## Imputing missing values
-
-
+```{r, echo=TRUE}
+nb_missing = sum(is.na(data$steps))
+data_new = data
+mean_data_interval = aggregate(steps ~ interval, data, mean)
+index = match(mean_data_interval$interval, data_new[is.na(data$steps),]$interval)
+data_new[is.na(data$steps),]$steps = mean_data_interval$steps[index]
+sum_data_new = aggregate(steps ~ date, data_new, sum)
+print(qplot(sum_data_new$steps))
+mean(sum_data_new$steps)
+median(sum_data_new$steps)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r, echo=TRUE}
+data_new$date <- as.Date(data_new$date)
+weekdays_name <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+data_new$day = c('weekend', 'weekday')[(weekdays(data_new$date) %in% weekdays_name)+1L]
+par(mfrow=c(1,2))
+mean_data_interval_weekday = aggregate(steps ~ interval, data_new[data_new$day == "weekday",], mean)
+plot.ts(mean_data_interval_weekday$interval, mean_data_interval_weekday$steps, type = 'l')
+mean_data_interval_weekend = aggregate(steps ~ interval, data_new[data_new$day == "weekend",], mean)
+plot.ts(mean_data_interval_weekend$interval, mean_data_interval_weekend$steps, type = 'l')
+```
